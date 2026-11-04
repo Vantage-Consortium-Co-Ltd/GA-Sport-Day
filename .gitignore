@@ -1,0 +1,6 @@
+output/
+__pycache__/
+*.pyc
+
+# ข้อมูลพนักงาน ไม่ commit ขึ้น remote
+data/*.csv
