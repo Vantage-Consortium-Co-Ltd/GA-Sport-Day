@@ -50,9 +50,9 @@ class FairnessObjective:
 
         out = {
             "gender": diff_mean(d.is_male),  # สัดส่วนชายในแต่ละทีมต่างกันเท่าไร
-            "weight": diff_mean(d.normalized["weight"].to_numpy()),
-            "height": diff_mean(d.normalized["height"].to_numpy()),
-            "age": diff_mean(d.normalized["age"].to_numpy()),
+            "weight": diff_mean(d.normalized["weight"]),
+            "height": diff_mean(d.normalized["height"]),
+            "age": diff_mean(d.normalized["age"]),
             "age_group": diff_mean(d.is_young) + diff_mean(d.is_senior),
         }
         # แผนก: ผลรวมความต่าง (จำนวนคนต่อแผนก) / จำนวนคนทั้งหมด

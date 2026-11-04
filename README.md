@@ -8,7 +8,7 @@
 ## สิ่งที่ต้องมี
 
 - Python 3.10 ขึ้นไป
-- แพ็กเกจใน `requirements.txt` (numpy, pandas, matplotlib)
+- แพ็กเกจใน `requirements.txt` (numpy, matplotlib)
 
 ```bash
 pip install -r requirements.txt

@@ -1,10 +1,10 @@
-"""(1) Data ingestion: อ่านข้อมูลพนักงาน + normalize"""
+"""(1) Data ingestion: อ่านข้อมูลพนักงาน + normalize (ใช้ csv + numpy ไม่ใช้ pandas)"""
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 from .config import DEFAULT_CSV
 
@@ -16,23 +16,25 @@ class EmployeeDataset:
     CATEGORICAL_COLS = ["gender", "department"]
 
     def __init__(self, csv_path: Path | str = DEFAULT_CSV):
-        # skipinitialspace: ใน HR.csv มีช่องว่างนำหน้าค่า (" R", " 89")
-        self.df = pd.read_csv(csv_path, skipinitialspace=True)
-        for col in self.CATEGORICAL_COLS:
-            self.df[col] = self.df[col].astype(str).str.strip()
-        self.n = len(self.df)
+        with open(csv_path, newline="", encoding="utf-8-sig") as f:
+            # strip: ใน HR.csv มีช่องว่างนำหน้าค่า (" R", " 89")
+            self.rows = [{k.strip(): v.strip() for k, v in r.items()} for r in csv.DictReader(f)]
+        self.n = len(self.rows)
+
+        self.gender = np.array([r["gender"] for r in self.rows])
+        self.department = np.array([r["department"] for r in self.rows])
+        self.raw = {c: np.array([r[c] for r in self.rows], dtype=float) for c in self.NUMERIC_COLS}
 
         # Min-max normalization -> ค่า 0..1 เพื่อให้ทุกมิติมีน้ำหนักเทียบกันได้
-        numeric = self.df[self.NUMERIC_COLS].astype(float)
-        self.normalized = (numeric - numeric.min()) / (numeric.max() - numeric.min())
+        self.normalized = {c: (v - v.min()) / (v.max() - v.min()) for c, v in self.raw.items()}
 
         # เตรียมเมทริกซ์ไว้ใช้คำนวณแบบ vectorized
-        self.is_male = (self.df["gender"] == "Male").to_numpy(dtype=float)
-        self.departments = sorted(self.df["department"].unique())
-        self.dept_matrix = pd.get_dummies(self.df["department"])[self.departments].to_numpy(dtype=float)
+        self.is_male = (self.gender == "Male").astype(float)
+        self.departments = sorted(set(self.department))
+        self.dept_matrix = (self.department[:, None] == np.array(self.departments)).astype(float)
 
         # คนรุ่นใหม่ / ผู้อาวุโส = 1/3 ล่าง และ 1/3 บนของอายุ
-        age = self.df["age"].to_numpy(dtype=float)
+        age = self.raw["age"]
         lo, hi = np.quantile(age, [1 / 3, 2 / 3])
         self.is_young = (age <= lo).astype(float)
         self.is_senior = (age >= hi).astype(float)

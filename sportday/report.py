@@ -1,6 +1,7 @@
 """(10) Reporting & Visualization"""
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
 import matplotlib
@@ -8,7 +9,6 @@ import matplotlib
 matplotlib.use("Agg")  # บันทึกรูปลงไฟล์โดยไม่ต้องเปิดหน้าต่าง
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from .config import OUTPUT_DIR
 from .data import EmployeeDataset
@@ -41,35 +41,33 @@ class ReportGenerator:
         plt.close(fig)
         return path
 
-    def comparison_table(self, chrom: np.ndarray) -> pd.DataFrame:
-        df = self.data.df
-        a, b = df[chrom == 0], df[chrom == 1]
+    def comparison_table(self, chrom: np.ndarray) -> list[tuple]:
+        """คืนรายการ (ชื่อมิติ, ค่าสี A, ค่าสี B)"""
+        d = self.data
+        teams = (chrom == 0, chrom == 1)
 
-        def row(name, fa, fb):
-            return {"Metric": name, "Color A": fa, "Color B": fb}
+        def stat(fn):
+            return [fn(m) for m in teams]
 
         rows = [
-            row("Headcount", len(a), len(b)),
-            row("Male : Female", f"{(a.gender == 'Male').sum()} : {(a.gender == 'Female').sum()}",
-                f"{(b.gender == 'Male').sum()} : {(b.gender == 'Female').sum()}"),
-            row("Mean weight (kg)", round(a.weight.mean(), 2), round(b.weight.mean(), 2)),
-            row("Mean height (cm)", round(a.height.mean(), 2), round(b.height.mean(), 2)),
-            row("Mean age (yrs)", round(a.age.mean(), 2), round(b.age.mean(), 2)),
+            ("Headcount", *stat(lambda m: m.sum())),
+            ("Male", *stat(lambda m: (m & (d.gender == "Male")).sum())),
+            ("Female", *stat(lambda m: (m & (d.gender == "Female")).sum())),
+            ("Weight_kg", *stat(lambda m: d.raw["weight"][m].mean())),
+            ("Height_cm", *stat(lambda m: d.raw["height"][m].mean())),
+            ("Age_yrs", *stat(lambda m: d.raw["age"][m].mean())),
         ]
-        table = pd.DataFrame(rows)
-        dept = pd.DataFrame({
-            "Color A": a.department.value_counts(),
-            "Color B": b.department.value_counts(),
-        }).fillna(0).astype(int)
-        dept.index = [f"Dept {d}" for d in dept.index]
-        dept = dept.reset_index().rename(columns={"index": "Metric"})
-        return pd.concat([table, dept], ignore_index=True)
+        for dep in d.departments:
+            rows.append((f"Dept {dep}", *stat(lambda m: (m & (d.department == dep)).sum())))
+        return rows
 
     def save_assignment(self, chrom: np.ndarray) -> Path:
-        out = self.data.df.copy()
-        out["team"] = [self.TEAM_NAMES[int(g)] for g in chrom]
         path = self.out_dir / "team_assignment.csv"
-        out.to_csv(path, index=False, encoding="utf-8-sig")
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.DictWriter(f, fieldnames=[*self.data.rows[0], "team"])
+            writer.writeheader()
+            for row, gene in zip(self.data.rows, chrom):
+                writer.writerow({**row, "team": self.TEAM_NAMES[int(gene)]})
         return path
 
     def report(self, result: GAResult) -> None:
@@ -81,6 +79,8 @@ class ReportGenerator:
         for k, v in self.objective.breakdown(result.best_chromosome).items():
             print(f"  {k:<11s}: {v[0]:.5f}")
         print("\nFairness comparison:")
-        print(self.comparison_table(result.best_chromosome).to_string(index=False))
+        print(f"{'':<12}{'Color A':>10}{'Color B':>10}")
+        for name, a, b in self.comparison_table(result.best_chromosome):
+            print(f"{name:<12}{a:>10.6g}{b:>10.6g}")
         print("\nSaved:", self.plot_convergence(result))
         print("Saved:", self.save_assignment(result.best_chromosome))
