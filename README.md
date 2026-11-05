@@ -57,14 +57,14 @@ python main.py
 ## ปรับค่าได้ที่ `main.py`
 
 ```python
-objective = FairnessObjective(data, FairnessWeights(gender=2.0))   # เน้นสมดุลเพศเป็น 2 เท่า
+objective = FairnessObjective(data, {"gender": 2})   # เน้นสมดุลเพศเป็น 2 เท่า (ส่งเฉพาะมิติที่อยากเปลี่ยน)
 ga = GeneticAlgorithm(objective, GAConfig(pop_size=200, mutation_rate=0.2))
 ```
 
 | ค่า | ความหมาย | ค่าเริ่มต้น |
 |---|---|---|
-| `FairnessWeights.gender / weight / height / age / age_group / department` | น้ำหนักความสำคัญของแต่ละมิติ | 1.0 |
-| `FairnessWeights.size_penalty` | โทษถ้าสองทีมคนไม่เท่ากัน | 100 |
+| น้ำหนัก `gender / weight / height / age / age_group / department` | ความสำคัญของแต่ละมิติ | 1 |
+| น้ำหนัก `size` | โทษถ้าสองทีมคนไม่เท่ากัน | 100 |
 | `GAConfig.pop_size` | จำนวนคำตอบในประชากร | 100 |
 | `GAConfig.generations` | จำนวนรุ่นสูงสุด | 1000 |
 | `GAConfig.elite_size` | จำนวนคำตอบที่เก็บไว้ตรงๆ ทุกรุ่น | 5 |
@@ -84,14 +84,10 @@ GA-Sport-Day/
 ├── docs/                     เอกสารแนวคิดของ GA
 ├── output/                   ผลลัพธ์ (ไม่อยู่ใน git)
 └── sportday/
-    ├── config.py             path ของข้อมูลและ output
     ├── data.py               EmployeeDataset         อ่านข้อมูล + normalize
     ├── fairness.py           FairnessObjective       นิยามความแฟร์ + คำนวณ cost
-    ├── population.py         PopulationFactory       โครโมโซม 0/1 + ประชากรเริ่มต้น
-    ├── selection.py          TournamentSelection     เลือกพ่อแม่
-    ├── crossover.py          OnePointCrossover       ตัดสลับ + ปรับให้ทีมเท่ากัน
-    ├── mutation.py           SwapMutation            สลับสีพนักงาน 2 คน
-    ├── genetic_algorithm.py  GeneticAlgorithm        วนรอบวิวัฒนาการ + early stopping
+    ├── operators.py          TournamentSelection / OnePointCrossover / SwapMutation
+    ├── genetic_algorithm.py  GAConfig, GeneticAlgorithm  ประชากรเริ่มต้น + วนรอบวิวัฒนาการ
     └── report.py             ReportGenerator         กราฟ ตาราง และไฟล์ CSV
 ```
 

@@ -1,43 +1,27 @@
 """
-จุดรันหลักของโปรเจกต์ GA Sport Day
+จุดรันหลัก:  python main.py
 
-    python main.py
-
-โครงสร้าง
-    main.py                      <- รันที่นี่ (ประกอบ object แล้วสั่งทำงาน)
-    sportday/config.py           path ของข้อมูลและโฟลเดอร์ output
-    sportday/data.py             (1)   EmployeeDataset
-    sportday/fairness.py         (2,5) FairnessWeights, FairnessObjective
-    sportday/population.py       (3,4) PopulationFactory
-    sportday/selection.py        (6)   TournamentSelection
-    sportday/crossover.py        (7)   OnePointCrossover
-    sportday/mutation.py         (8)   SwapMutation
-    sportday/genetic_algorithm.py(9)   GAConfig, GeneticAlgorithm
-    sportday/report.py           (10)  ReportGenerator
+    sportday/data.py               (1)     EmployeeDataset
+    sportday/fairness.py           (2,5)   FairnessObjective
+    sportday/operators.py          (6,7,8) Selection / Crossover / Mutation
+    sportday/genetic_algorithm.py  (3,4,9) GAConfig, GeneticAlgorithm
+    sportday/report.py             (10)    ReportGenerator
 """
-from sportday import (
-    EmployeeDataset,
-    FairnessObjective,
-    FairnessWeights,
-    GAConfig,
-    GeneticAlgorithm,
-    ReportGenerator,
-)
+from pathlib import Path
+
+from sportday.data import EmployeeDataset
+from sportday.fairness import FairnessObjective
+from sportday.genetic_algorithm import GAConfig, GeneticAlgorithm
+from sportday.report import ReportGenerator
+
+BASE = Path(__file__).resolve().parent
 
 
-def main() -> None:
-    # 1) โหลดข้อมูล
-    data = EmployeeDataset()
-
-    # 2) กำหนดความแฟร์ (ปรับน้ำหนักแต่ละมิติได้ที่นี่)
-    objective = FairnessObjective(data, FairnessWeights())
-
-    # 3) ตั้งค่าและรัน GA (ปรับ pop_size, generations, mutation_rate ฯลฯ ที่นี่)
-    ga = GeneticAlgorithm(objective, GAConfig())
-    result = ga.run()
-
-    # 4) สรุปผล: กราฟ, ตารางเปรียบเทียบ, CSV รายชื่อ
-    ReportGenerator(data, objective).report(result)
+def main():
+    data = EmployeeDataset(BASE / "data" / "HR.csv")
+    objective = FairnessObjective(data)  # เช่น FairnessObjective(data, {"gender": 2}) = เน้นเพศ 2 เท่า
+    result = GeneticAlgorithm(objective, GAConfig()).run()
+    ReportGenerator(data, objective, BASE / "output").report(result)
 
 
 if __name__ == "__main__":
