@@ -1,28 +1,21 @@
-"""
-จุดรันหลัก:  python main.py
+"""แบ่งพนักงานเป็นทีมกีฬาสี 2 สีให้ยุติธรรมที่สุดด้วย Genetic Algorithm: python main.py"""
+import os
 
-    sportday/data.py               (1)     EmployeeDataset
-    sportday/fairness.py           (2,5)   FairnessObjective
-    sportday/operators.py          (6,7,8) Selection / Crossover / Mutation
-    sportday/genetic_algorithm.py  (3,4,9) GAConfig, GeneticAlgorithm
-    sportday/report.py             (10)    ReportGenerator
-"""
-from pathlib import Path
+from teamga.employees import Employees
+from teamga.fitness import Fitness
+from teamga.ga import GeneticAlgorithm, Settings
+from teamga.report import Report
 
-from sportday.data import EmployeeDataset
-from sportday.fairness import FairnessObjective
-from sportday.genetic_algorithm import GAConfig, GeneticAlgorithm
-from sportday.report import ReportGenerator
+DATA = 'data/HR.csv'
+OUTPUT = 'output'
 
-BASE = Path(__file__).resolve().parent
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+emp = Employees(DATA)
+print(f'พนักงาน {len(emp)} คน, {len(emp.dept_names)} แผนก')
 
+fitness = Fitness(emp)                  # เช่น Fitness(emp, {'gender': 3}) = ให้ความสำคัญกับเพศ 3 เท่า
+ga = GeneticAlgorithm(fitness, len(emp), Settings())
+random_team = ga.random_team()          # ไว้เทียบว่า GA ดีกว่าการสุ่มแบ่งแค่ไหน
+ga.run()
 
-def main():
-    data = EmployeeDataset(BASE / "data" / "HR.csv")
-    objective = FairnessObjective(data)  # เช่น FairnessObjective(data, {"gender": 2}) = เน้นเพศ 2 เท่า
-    result = GeneticAlgorithm(objective, GAConfig()).run()
-    ReportGenerator(data, objective, BASE / "output").report(result)
-
-
-if __name__ == "__main__":
-    main()
+Report(emp, fitness, OUTPUT).show(ga, random_team)
