@@ -4,3 +4,4 @@ __pycache__/
 
 # ข้อมูลพนักงาน ไม่ commit ขึ้น remote
 data/*.csv
+.pytest_cache/
