@@ -6,7 +6,7 @@ NUMERIC = ['weight', 'height', 'age']
 
 
 class Employees:
-    """อ่าน HR.csv แล้วเตรียมข้อมูลให้พร้อมคำนวณ (ทุกอย่างเป็น array เรียงตามแถวในไฟล์)"""
+    """อ่าน HR.csv แล้วเตรียมข้อมูลให้พร้อมคำนวณ  (ทุกอย่างเป็น array เรียงตามแถวในไฟล์)"""
 
     def __init__(self, path):
         with open(path, newline='', encoding='utf-8-sig') as f:
